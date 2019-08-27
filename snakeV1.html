@@ -43,7 +43,18 @@ const prime4 = 1997;
   */
   function mRand (coor, prime) {
     return (coor * prime) % 25;
-  }                                         // + 0.5
+  }                                         
+
+  /* nodding: string -> number
+  Recibe la dirección del movimiento del snake y devuelve una distancia 
+  que servirá para darle el movimiento de cabeceo.
+  nodding (dir) {
+  */
+  const nodFactor = 1/5;
+
+  function nodding (axisVal){
+      return 0.2 * Math.sin (nodFactor * Math.PI * axisVal);
+  }
 
 
   function make(data, attribute) {
@@ -54,11 +65,13 @@ const prime4 = 1997;
 
     //Esto se llama antes de iniciar el juego
       processing.setup = function () {
-      processing.frameRate(10);
+      processing.frameRate(8);
       processing.size(500, 500);
       processing.background(10, 200, 50);
-      processing.state = { boxSize: 20, dir:"", temp: "",
+      processing.state = { boxSize: 20, space: 25, dir:"", temp: "",
       snake:[{ x: 7, y: 5 }, { x: 6, y: 5 }, {x :5, y :5}, { x: 5, y: 6}], food: { x: 3 , y: 13  }};
+
+      var canvas = document.getElementById("canvas").focus();
       }  //preX: 1373, preY: 3527,
 
 
@@ -68,36 +81,45 @@ const prime4 = 1997;
       switch(world.dir){
         case "UP":
           if ( dist(first(world.snake), world.food, 0) <= 0.7 ){
-            return make (world, {snake: cons ({x: first(world.snake).x, y: first(world.snake).y - 1}, world.snake),
+            return make (world, {snake: cons ({x: first(world.snake).x, 
+              y: first(world.snake).y - 1}, world.snake),
             food: {x: mRand(world.food.x, prime1), y: mRand(world.food.y, prime2)}});
-            /*food: {preX: Math.floor(world.food.preX * world.food.x), preY: Math.floor (world.food.preY * world.food.y), 
-              x: (Math.floor(world.food.preX * world.food.x)) % 23  + 0.5, y: Math.floor(world.food.preY * world.food.y) % 23  + 0.5}});
-            */
-          }  
-        return make (world, {snake: cons ({x: first(world.snake).x, y: first(world.snake).y - 1}, primeros(world.snake))});
+          
+          }else if(first(world.snake).y == 0){
+            return make (world, {snake: cons ({x: first(world.snake).x, 
+          y: 25}, primeros(world.snake))});
+          }else
+        return make (world, {snake: cons ({x: first(world.snake).x, 
+          y: first(world.snake).y - 1}, primeros(world.snake))});
         break;
-
+ 
         case "RIGHT":
         if ( dist(first(world.snake), world.food, 0) <= 0.7 ){
             return make (world, {snake: cons ({x: first(world.snake).x + 1, y: first(world.snake).y}, world.snake),
             food: {x: mRand(world.food.x, prime2), y: mRand(world.food.y, prime3)}});
-          }  
+          }  else if(first(world.snake).x == 25){
+            return make (world, {snake: cons ({x: 0, y: first(world.snake).y}, primeros(world.snake))});
+          }else
         return make (world, {snake: cons ({x: first(world.snake).x + 1, y: first(world.snake).y}, primeros(world.snake))});
         break;
 
         case "DOWN":
-        if ( dist(first(world.snake), world.food, 0) <= 0.1 ){
+        if ( dist(first(world.snake), world.food, 0) <= 0.7 ){
             return make (world, {snake: cons ({x: first(world.snake).x, y: first(world.snake).y + 1}, world.snake),
             food: {x: mRand(world.food.x, prime3), y: mRand(world.food.y, prime4)}});
-          } 
+          } else if(first(world.snake).y == 25){
+            return make (world, {snake: cons ({x: first(world.snake).x, y: 0}, primeros(world.snake))});
+          }else
         return make(world, {snake: cons ({x: first(world.snake).x, y: first(world.snake).y + 1}, primeros(world.snake))});
         break;
 
         case "LEFT":
-        if ( dist(first(world.snake), world.food, 0) <= 0.1 ){
+        if ( dist(first(world.snake), world.food, 0) <= 0.7 ){
             return make (world, {snake: cons ({x: first(world.snake).x - 1, y: first(world.snake).y}, world.snake),
             food: {x: mRand(world.food.x, prime4), y: mRand(world.food.y, prime1)}});
-          } 
+          } else if(first(world.snake).x == 0){
+            return make (world, {snake: cons ({x: 25, y: first(world.snake).y}, primeros(world.snake))});
+          }else
         return make(world, {snake: cons ({x: first(world.snake).x - 1, y: first(world.snake).y}, primeros(world.snake))});
         break;
 
@@ -115,17 +137,30 @@ const prime4 = 1997;
     processing.onKeyEvent = function (world, keyCode) {
       switch (keyCode) {
         case processing.UP:
+          if(world.dir == "DOWN")
+          return make(world, {dir:"DOWN"});
+          else{ 
           return make(world, {dir:"UP", temp: "UP"});
+          }
           break;
         case processing.DOWN:
+        if(world.dir == "UP"){
+          return make(world, {dir:"UP"});
+        }else{ 
           return make(world, {dir:"DOWN", temp: "DOWN"});
-          break;
+        }break;
         case processing.LEFT:
-          return make(world, {dir:"LEFT", temp: "LEFT"});
-          break;
+        if(world.dir == "RIGHT"){
+          return make(world, {dir:"RIGHT"});
+        }else{ 
+        return make(world, {dir:"LEFT", temp: "LEFT"});
+        }break;
         case processing.RIGHT:
+        if(world.dir == "LEFT"){
+          return make(world, {dir:"LEFT"});
+        }else{ 
           return make(world, {dir:"RIGHT", temp: "RIGHT"});
-          break;
+        }break;
 
         case 32:
           if (world.dir == ""){
@@ -147,14 +182,15 @@ const prime4 = 1997;
         function drawSnake(snake) {
           snake.forEach(part => {
             processing.fill(240, 240, 240);
-            processing.rect(part.x * world.boxSize, part.y * world.boxSize, world.boxSize, world.boxSize);
+            processing.ellipse( (part.x  + nodding(part.y, world.dir) )* world.boxSize, 
+            ((part.y + nodding(part.x, world.dir)) * world.boxSize) , world.boxSize, world.boxSize);
           });
         }
 
 
         function drawFood(food) {
           processing.fill(200, 20, 10);
-          processing.ellipse((world.food.x + 0.5) * world.boxSize, (world.food.y + 0.5) * world.boxSize, 
+          processing.ellipse((world.food.x) * world.boxSize, (world.food.y) * world.boxSize, 
           world.boxSize, world.boxSize);
         }
 
